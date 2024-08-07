@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable,timer } from 'rxjs';
 import { Router } from '@angular/router';
 import { tap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import * as Papa from 'papaparse';
+import { Chart } from 'chart.js';
+import { switchMap } from 'rxjs/operators';
 export interface DataItem {
   Numero: string;
   'Code Article': string;
@@ -35,8 +37,10 @@ export interface DataItem {
 })
 
 export class AuthService {
+  chart: any;
   private baseUrl = 'http://localhost:5000'; // Your Flask backend URL
   public apiUrl = 'http://localhost:5000/getData';
+  private pollingInterval = 5000;
   constructor(private http: HttpClient,private router: Router) { }
 
   login(email: string, password: string): Observable<any> {
@@ -85,12 +89,63 @@ export class AuthService {
   }
 
 
-  getQuantityByMonth(famille: string, year: string): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/get_quantity_by_month`, {
-        params: new HttpParams().set('famille', famille).set('year', year)
-    });
-}
+  // getQuantityByMonth(famille: string, year: string): Observable<any> {
+  //   return this.http.get<any>(`${this.baseUrl}/get_quantity_by_month`, {
+  //       params: new HttpParams().set('famille', famille).set('year', year)
+  //   });
+//}
 getFamilles(): Observable<string[]> {
-  return this.http.get<string[]>(`${this.baseUrl}/get_familles`);
+  return timer(0, this.pollingInterval).pipe(
+    switchMap(() => this.http.get<string[]>(`${this.baseUrl}/familles`))
+  );
+}
+
+
+// getQuantityByMonth(year: number, famille: string): Observable<any> {
+//   let params = new HttpParams().set('year', year.toString());
+//   if (famille) {
+//     params = params.set('famille', famille);
+//   }
+//   return this.http.get('/get_quantity_by_month', { params });
+// }
+
+getQuantityByMonth(famille: string, year: number, month: number): void {
+  this.http.get<any[]>(`http://127.0.0.1:5000/get_quantity_by_month`, {
+    params: {
+      famille: famille,
+      year: year.toString(), // Ensure values are strings
+      month: month.toString()
+    }
+  }).subscribe(data => {
+    const labels = data.map(item => `Month ${item.Month}`);
+    const quantities = data.map(item => item.Qte);
+
+    if (this.chart) {
+      this.chart.destroy(); // Destroy the previous chart instance if it exists
+    }
+
+    this.chart = new Chart('canvas', {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: `Quantity for ${famille} in ${year} in ${month}`,
+            data: quantities,
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  });
 }
 }

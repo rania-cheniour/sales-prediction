@@ -13,8 +13,20 @@ import { AuthService,DataItem  } from '../auth/auth.service';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
     groupedData: any[] = [];
-    familles: string[] = [];
+    years: any[] = [];
+    familles: any[] = [];
+    filteredFamilles: any[] = [];
+    searchQuery: string = '';
+    months: number[] = [];
+    selectedYear: string = ''
     selectedFamille: string = '';
+    selectedMonth: string = '';
+    familleSearch: string = '';
+    isLoading = true;
+    monthNames: string[] = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
     rawData: any[] = [];
 
     items!: MenuItem[];
@@ -38,6 +50,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
+
+        this.loadOptions();
+        this.loadChart();
         this.authService.getGroupedData().subscribe(
             response => {
               this.groupedData = response;
@@ -46,7 +61,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
               console.error('Error fetching grouped data', error);
             }
           );
-        this.loadFamilles();
+        this.authService.getFamilles()
         this.initChart();
         this.productService.getProductsSmall().then(data => this.products = data);
 
@@ -104,10 +119,53 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
     }
 
+    loadOptions(): void {
+        // Fetch years and familles from the backend
+        this.http.get<any[]>('http://127.0.0.1:5000/get_years').subscribe(data => {
+          this.years = data;
+        });
+    
+        this.http.get<any[]>('http://127.0.0.1:5000/familles').subscribe(data => {
+          this.familles = data;
+          this.filteredFamilles = data;
+        });
+        this.http.get<any[]>('http://127.0.0.1:5000/get_months').subscribe(data => {
+          this.months = data;
+        });
+      }
+      loadChart(): void {  
+        // Convert selectedYear to number if it's not already
+        const year = Number(this.selectedYear);
+        const month = Number(this.selectedMonth);
+        this.authService.getQuantityByMonth(this.selectedFamille,year,month);
+      }
+      onYearChange(year: any): void {
+        this.selectedYear = year;
+        this.loadChart();
+      }
+    
+      onFamilleChange(famille: any): void {
+        this.selectedFamille = famille;
+        this.loadChart();
+      }
+      onMonthChange(month: any): void {
+        this.selectedMonth = month;
+        this.loadChart();
+      }
+      filterFamilles(): void {
+        const query = this.searchQuery.toLowerCase();
+        console.log('Search Query:', query); // Debugging log
+        this.filteredFamilles = this.familles.filter(famille =>
+            famille.toLowerCase().startsWith(query)
+        );
+        console.log('Filtered Families:', this.filteredFamilles); // Debugging log
+    }   
+    
 
     loadFamilles() {
         this.http.get<string[]>('http://localhost:5000/familles').subscribe(data => {
           this.familles = data;
+          this.filteredFamilles = data;
         });
       }
       loadData() {
@@ -116,12 +174,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.updateChart();
         });
       }
-      onFamilleChange(event) {
-        this.selectedFamille = event.target.value;
-        this.authService.getGroupedData();  // Load data whenever the selected family changes
-      } 
+    //   onFamilleChange(event) {
+    //     this.selectedFamille = event.target.value;
+    //     this.authService.getGroupedData();  // Load data whenever the selected family changes
+    //   } 
       updateChart() {
-        if (!this.selectedFamille) {
+        if (!this.selectedFamille || Number(this.selectedYear) ===0 || Number(this.selectedMonth) === 0) {
           return;
         }
     
@@ -137,7 +195,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
           const month = date.getMonth();  // Get month index (0-11)
           monthlyData[month] += item.Qte; // Sum quantities by month
         });
-    
         this.chartData = {
           labels: monthNames,
           datasets: [

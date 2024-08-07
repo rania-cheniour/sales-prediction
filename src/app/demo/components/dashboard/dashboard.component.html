@@ -276,14 +276,33 @@
     </div>
 </div> -->
 
-<div class="card">
-    <h5>Sales Overview</h5>
-    <div>
-      <label for="familleSelect">Select Famille: </label>
-      <select id="familleSelect" (change)="onFamilleChange($event)">
-        <option *ngFor="let famille of familles" [value]="famille">{{ famille }}</option>
-      </select>
-    </div>
-    <p-chart type="line" [data]="chartData" [options]="chartOptions"></p-chart>
+  <div>
+    <h2>Quantity by Month</h2>
+
+    <label for="year">Year:</label>
+    <select id="year" [(ngModel)]="selectedYear" (change)="onYearChange($event.target.value)">
+      <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+    </select>
+    <div class="card">
+        <h5>Year:</h5>
+        <p-dropdown 
+  [options]="years" 
+  [(ngModel)]="selectedYear" 
+  placeholder="Select a year"
+  (onChange)="onYearChange($event.value)">
+</p-dropdown>
+<h5>Famille</h5>
+<p-listbox 
+    [options]="familles" 
+    [(ngModel)]="selectedFamille" 
+    [filter]="true" 
+    filterPlaceholder="Search by alphabet..."
+    (onChange)="onFamilleChange($event.value)">
+</p-listbox>
+
+                <h5>Month:</h5>
+                <p-dropdown [options]="months" [(ngModel)]="selectedMonth" placeholder="Select a Month" (onChange)="onMonthChange($event.value)"></p-dropdown>    
+
+        </div>
+    <canvas id="canvas"></canvas>
   </div>
-  

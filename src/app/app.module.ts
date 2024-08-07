@@ -13,12 +13,13 @@ import { NodeService } from './demo/service/node.service';
 import { PhotoService } from './demo/service/photo.service';
 import { ReactiveFormsModule } from '@angular/forms'; // Import ReactiveFormsModule
 import { DashboardComponent } from './demo/components/dashboard/dashboard.component';
+import { ListboxModule } from 'primeng/listbox'; // Import ListboxModule from PrimeNG
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { NgxDaterangepickerMd } from 'ngx-daterangepicker-material';
 import { DropdownModule } from 'primeng/dropdown';
 @NgModule({
     declarations: [AppComponent, NotfoundComponent],
-    imports: [AppRoutingModule, AppLayoutModule, BrowserAnimationsModule,NgxDaterangepickerMd.forRoot(),DropdownModule],
+    imports: [AppRoutingModule, AppLayoutModule, BrowserAnimationsModule,NgxDaterangepickerMd.forRoot(),DropdownModule,ListboxModule],
     providers: [
         { provide: LocationStrategy, useClass: PathLocationStrategy },
         CountryService, CustomerService, EventService, IconService, NodeService,
